@@ -27,7 +27,8 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
 
       - name: Find project folder and build
         run: |
@@ -40,6 +41,3 @@ jobs:
         run: find extracted -name "*.apk"
 
       - uses: actions/upload-artifact@v4
-        with:
-          name: OxideLauncher-apk
-          path: extracted/**/app-debug.apk
