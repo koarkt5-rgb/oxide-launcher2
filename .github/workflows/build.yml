@@ -9,8 +9,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Unzip project
-        run: unzip -o OxideLauncher.zip
+      - name: Show repo contents (debug)
+        run: find . -maxdepth 3 -iname "*.zip" -o -maxdepth 1 -type d
+
+      - name: Unzip project (finds the zip anywhere in repo)
+        run: |
+          ZIPFILE=$(find . -iname "*.zip" | head -n 1)
+          echo "Найден архив: $ZIPFILE"
+          if [ -z "$ZIPFILE" ]; then
+            echo "Zip-файл не найден в репозитории!"
+            exit 1
+          fi
+          unzip -o "$ZIPFILE" -d extracted
 
       - uses: actions/setup-java@v4
         with:
@@ -19,10 +29,17 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
-      - run: gradle assembleDebug
-        working-directory: OxideLauncher
+      - name: Find project folder and build
+        run: |
+          PROJECT_DIR=$(find extracted -maxdepth 2 -name "settings.gradle" -exec dirname {} \;)
+          echo "Папка проекта: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          gradle assembleDebug
+
+      - name: Find built APK
+        run: find extracted -name "*.apk"
 
       - uses: actions/upload-artifact@v4
         with:
           name: OxideLauncher-apk
-          path: OxideLauncher/app/build/outputs/apk/debug/app-debug.apk
+          path: extracted/**/app-debug.apk
